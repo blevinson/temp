@@ -1,6 +1,14 @@
 config:
   target: https://wiser.com
-
+  plugins:
+    publish-metrics:
+      - type: prometheus
+        pushgateway: "http://localhost:9091"
+        tags:
+          - "testId:perf-2122"
+          - "type:perf-test"
+      - type: statsd
+        prefix: 'artillery.publish_metrics_plugin.'
 scenarios:
 - name: wiser_dot_com
   flow:
