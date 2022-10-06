@@ -1,0 +1,14 @@
+config:
+  target: https://wiser-data-cubejs.test.wiser.com/cubejs-api/v1/load
+- name: cubejs
+  flow:
+  - get:
+      url: /
+      headers:
+        Content-Type: application/json
+        Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiI5OEU0MmtXN21YYnQifQ.3el7_PmPrQHhUIdht6S_bBFpOrT7EgJowD8hd_DfE6s
+      form:
+        query: { "limit": 100,  "measures": ["Tpse.count"],  "dimensions": [ "Tpse.Url"], "timeDimensions": [], "order": { "Tpse.count": "desc" }}
+
+  - log: "Extracted Title: {{ extract_title }}"
+  - log: "Extracted Content Length: {{ extract_content_length }}"
