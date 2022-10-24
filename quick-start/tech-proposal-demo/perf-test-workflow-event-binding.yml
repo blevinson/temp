@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowEventBinding
+metadata:
+  name: event-performance-test
+  namespace: argo
+spec:
+  event:
+    selector: payload.message != "" && metadata["x-argo-e2e"] == ["true"] && discriminator == "my-discriminator"
+  submit:
+    workflowTemplateRef:
+      name: wf-atlas-dag-template
+    arguments:
+      parameters:
+        - name: message
+          valueFrom:
+            event: payload.message
