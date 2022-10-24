@@ -55,6 +55,6 @@ repo?
 Combined Install:
 Name: bootstrap-infra-argo
 URL: https://github.com/blevinson/temp
-Path: deploy
+Path: deploy/namespace-install
 
 

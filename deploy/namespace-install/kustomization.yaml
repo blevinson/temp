@@ -3,11 +3,35 @@ kind: Kustomization
 
 resources:
 #  - ../base
-  - rbac
-  - ../base/crds/minimal
+  - rbac/argo-events-role.yaml
+  - rbac/argo-events-role-binding.yaml
   - ../base/crds/argoproj.io_eventbus.yaml
   - ../base/crds/argoproj.io_eventsources.yaml
   - ../base/crds/argoproj.io_sensors.yaml
+  - ../base/workflow-controller/workflow-controller-configmap.yaml
+  - ../base/workflow-controller/workflow-controller-deployment.yaml
+  - ../base/workflow-controller/workflow-controller-sa.yaml
+  - ../base/workflow-controller/workflow-controller-priorityclass.yaml
+  - ../base/crds/minimal/argoproj.io_clusterworkflowtemplates.yaml
+  - ../base/crds/minimal/argoproj.io_cronworkflows.yaml
+  - ../base/crds/minimal/argoproj.io_workflows.yaml
+  - ../base/crds/minimal/argoproj.io_workflowtemplates.yaml
+  - ../base/crds/minimal/argoproj.io_workfloweventbindings.yaml
+  - ../base/crds/minimal/argoproj.io_workflowtasksets.yaml
+  - ../base/crds/minimal/argoproj.io_workflowtaskresults.yaml
+  - ../base/crds/minimal/argoproj.io_workflowartifactgctasks.yaml
+  - ../base/crds/argoproj.io_eventbus.yaml
+  - ../base/crds/argoproj.io_eventsources.yaml
+  - ../base/crds/argoproj.io_sensors.yaml
+  - ../base/argo-server/argo-server-deployment.yaml
+  - ../base/argo-server/argo-server-sa.yaml
+  - ../base/argo-server/argo-server-service.yaml
+  - ../namespace-install/workflow-controller-rbac/workflow-controller-role.yaml
+  - ../namespace-install/workflow-controller-rbac/workflow-controller-rolebinding.yaml
+  - ../namespace-install/argo-server-rbac/argo-server-role.yaml
+  - ../namespace-install/argo-server-rbac/argo-server-rolebinding.yaml
+
+
 namespace: argo
 patchesJson6902:
   - target:
