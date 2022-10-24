@@ -52,5 +52,9 @@ Notes:
  and work together? Research this. We may have to add them both into our own /
 repo?
 
+Combined Install:
+Name: bootstrap-infra-argo
+URL: https://github.com/blevinson/temp
+Path: deploy
 
 
