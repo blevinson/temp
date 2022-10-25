@@ -66,4 +66,5 @@ New Workspace:
 Name: bootstrap-infra-argo
 URL: https://github.com/blevinson/temp
 Path: manifest/namespace-install
+Revision: mod-dev_v1
 

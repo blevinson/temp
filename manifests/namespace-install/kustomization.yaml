@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - ../base
+  - rbac
   - ./argo-server-rbac
   - ./workflow-controller-rbac
 
@@ -19,3 +20,10 @@ patchesJson6902:
       kind: Deployment
       name: argo-server
     path: ./overlays/argo-server-deployment.yaml
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --namespaced
+    target:
+      kind: Deployment
