@@ -1,0 +1,117 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: webhook
+spec:
+  template:
+    serviceAccountName: operate-workflow-sa
+  dependencies:
+    - name: test-dep
+      eventSourceName: webhook
+      eventName: performance-test
+  triggers:
+    - template:
+        name: webhook-workflow-trigger
+        k8s:
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: webhook-
+              spec:
+                entrypoint: dag-template
+                templates:
+                  - name: dag-template
+                    dag:
+                      tasks:
+                        - name: DIS-Ingestion-Delay-Source
+                          template: artilleryio
+                        - name: DIS-Processing-Delay
+                          template: artilleryio
+                          dependencies: [DIS-Ingestion-Delay-Source]
+                        - name: CTS-Ingestion-Delay
+                          template: artilleryio
+                          dependencies: []
+                        - name: CTS-Processing-Delay
+                          template: artilleryio
+                          dependencies: [CTS-Ingestion-Delay]
+                        - name: CubeJS-Response-Rate-Cohort-1
+                          template: artilleryio
+                          dependencies: []
+                        - name: CubeJS-Response-Rate-Cohort-2
+                          template: artilleryio
+                          dependencies: [CubeJS-Response-Rate-Cohort-1]
+                        - name: CubeJS-Response-Rate-Cohort-3
+                          template: artilleryio
+                          dependencies: [CubeJS-Response-Rate-Cohort-2]
+                        - name: CubeJS-Response-Rate-Cohort-4
+                          template: artilleryio
+                          dependencies: [CubeJS-Response-Rate-Cohort-3]
+                        - name: CubeJS-Response-Rate-Cohort-5
+                          template: artilleryio
+                          dependencies: [CubeJS-Response-Rate-Cohort-4]
+                        - name: CubeJS-Response-Rate-Cohort-6
+                          template: artilleryio
+                          dependencies: [CubeJS-Response-Rate-Cohort-5]
+                        #      - name: CubeJS-Response-Rate-Cohort-7
+                        #        template: artilleryio
+                        #        dependencies: [CubeJS-Response-Rate-Cohort-6]
+                        #      - name: CubeJS-Response-Rate-Cohort-8
+                        #        template: artilleryio
+                        #        dependencies: [CubeJS-Response-Rate-Cohort-7]
+                        #      - name: CubeJS-Response-Rate-Cohort-9
+                        #        template: artilleryio
+                        #        dependencies: [CubeJS-Response-Rate-Cohort-8]
+                        #      - name: CubeJS-Response-Rate-Cohort-10
+                        #        template: artilleryio
+                        #        dependencies: [CubeJS-Response-Rate-Cohort-9]
+                        #      - name: CubeJS-Response-Rate-Cohort-11
+                        #        template: artilleryio
+                        #        dependencies: [CubeJS-Response-Rate-Cohort-10]
+                        #      - name: CubeJS-Response-Rate-Cohort-12
+                        #        template: artilleryio
+                        #        dependencies: [CubeJS-Response-Rate-Cohort-11]
+
+                        # Product Driven Scenarios
+                        - name: Pricing-List-of-matched-products-for-a-customer
+                          template: artilleryio
+                          dependencies: []
+                        - name: DSI-Share-of-search
+                          template: artilleryio
+                          dependencies: [Pricing-List-of-matched-products-for-a-customer]
+                        - name: Pricing-Average-price-of-competitor-products
+                          template: artilleryio
+                          dependencies: [DSI-Share-of-search]
+                        - name: Pricing-List-of-6-months-of-product-offers-data
+                          template: artilleryio
+                          dependencies: [Pricing-Average-price-of-competitor-products]
+                        - name: Pricing-List-of-Product-offers-for-a-particular-matched-product
+                          template: artilleryio
+                          dependencies: [Pricing-List-of-6-months-of-product-offers-data]
+                        - name: Generate-Report
+                          template: artilleryio-report
+                          dependencies: [CubeJS-Response-Rate-Cohort-6,Pricing-List-of-Product-offers-for-a-particular-matched-product,DIS-Processing-Delay,CTS-Processing-Delay]
+                  - name: task-template
+                    script:
+                      image: python:3.8-slim
+                      command: [python]
+                      source: |
+                        print("Task executed")
+                  - name: artilleryio
+                    container:
+                      image: artilleryio/artillery:latest
+                      command: [ "/bin/sh","-c" ]
+                      args: [ "apk add wget ; wget https://raw.githubusercontent.com/blevinson/temp/main/wiser_regex.yml ; run run ./wiser_regex.yml --output ./load-run.json" ]
+                  - name: artilleryio-report
+                    container:
+                      image: artilleryio/artillery:latest
+                      command: [ "/bin/sh","-c" ]
+                      args: [ "apk add wget ; wget https://raw.githubusercontent.com/blevinson/temp/main/wiser_regex.yml ; run run ./wiser_regex.yml --output ./load-run.json ; run report ./load-run.json" ]
+                    outputs:
+                      artifacts:
+                        - name: report
+                          path: ./load-run.json.html
+                          archive:
+                            none: {}

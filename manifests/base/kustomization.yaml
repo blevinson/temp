@@ -6,6 +6,8 @@ resources:
 - workflow-controller
 - argo-server
 - argo-events-sa.yaml
+- operator-workflow-sa.yaml
+- event-bus.yaml
 - controller-manager
 
 images:

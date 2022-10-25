@@ -62,9 +62,13 @@ Name: bootstrap-infra-argo
 URL: https://github.com/blevinson/temp
 Path: quick-start
 
+
+--
 New Workspace:
 Name: bootstrap-infra-argo
 URL: https://github.com/blevinson/temp
 Path: manifest/namespace-install
 Revision: mod-dev_v1
+
+kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-events/stable/examples/eventbus/native.yaml
 
