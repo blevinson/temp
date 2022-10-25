@@ -57,4 +57,9 @@ Name: bootstrap-infra-argo
 URL: https://github.com/blevinson/temp
 Path: deploy/namespace-install
 
+Quick-Start Install:
+Name: bootstrap-infra-argo
+URL: https://github.com/blevinson/temp
+Path: quick-start
+
 
