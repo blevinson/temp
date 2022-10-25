@@ -3,3 +3,7 @@ kind: Kustomization
 
 resources:
   - minimal
+  - argoproj.io_eventbus.yaml
+  - argoproj.io_eventsources.yaml
+  - argoproj.io_sensors.yaml
+
