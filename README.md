@@ -63,6 +63,7 @@ URL: https://github.com/blevinson/temp
 Path: quick-start
 
 
+#kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-events/stable/examples/eventbus/native.yaml
 --
 New Workspace:
 Name: bootstrap-infra-argo
@@ -70,5 +71,33 @@ URL: https://github.com/blevinson/temp
 Path: manifest/namespace-install
 Revision: mod-dev_v1
 
-kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-events/stable/examples/eventbus/native.yaml
+## Setyp Artillery
 
+clone https://github.com/artilleryio/artillery-operator.git
+
+## Update Role (this needs to be verified)
+Add the following to the config/rbac/role.yaml file:
+- apiGroups:
+ - ""
+   resources:
+ - configmaps
+   verbs:
+ - get
+ - list
+ - watch
+ - create
+ - update
+ - patch
+ - delete
+
+Ensure you can execute operator-deploy.sh found in the artillery-operator root directory.
+Then simply run:
+
+./operator-deploy.sh
+
+Load basic tests:
+
+kubectl apply -k hack/examples/basic-loadtest
+
+## Check load test
+kubectl get loadtests basic-test
