@@ -1,103 +1,144 @@
-## Install ArgoCD:
-```bash
-kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-```
+## Prerequisites:
+Argo CD Installed
 
-Use the following configurations
-
-
-
-https://162.0.213.73:8080
-
-https://argocd.k8s.infra.wiser.com/applications/bootstrap-infra-argo
-
-https://github.com/blevinson/temp
-
-path: deploy
-Revision: main
-namespace: argo
-Application Name: bootstrap-infra-argo
-prune: false
-self heal: false
-automated: true
-auto-sync: true
-
-Not using: https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml
-
-Using: https://github.com/argoproj/argo-workflows/blob/master/manifests/quick-start-postgres.yaml
-
-Version 3.4.1: https://github.com/argoproj/argo-workflows/blob/v3.4.1/manifests/quick-start-postgres.yaml
-
-https://argoproj.github.io/argo-workflows/installation/
-
-
-From Infra's version:
-
-
-https://github.com/argoproj/argo-workflows
-
-v2.12.7
-
-manifests/namespace-install
-
-Get Authentication: kubectl -n argo exec argo-server-${POD_ID} -- argo auth token
-
-Install Argo Events:
-Repo: https://github.com/argoproj/argo-events
-Path: manifests/namespace-install
-
-Notes:
-1) Figure out how Workflow and Events can both be deployed via namespace-install /
- and work together? Research this. We may have to add them both into our own /
-repo?
-
-Combined Install:
-Name: bootstrap-infra-argo
-URL: https://github.com/blevinson/temp
-Path: deploy/namespace-install
-
-Quick-Start Install:
-Name: bootstrap-infra-argo
-URL: https://github.com/blevinson/temp
-Path: quick-start
-
-
-#kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-events/stable/examples/eventbus/native.yaml
---
-New Workspace:
-Name: bootstrap-infra-argo
-URL: https://github.com/blevinson/temp
-Path: manifest/namespace-install
+## Install Argo Workflows with Argo Events
+Name: bootstrap-infra-argo \
+URL: https://github.com/blevinson/temp \
+Path: manifest/namespace-install \
 Revision: mod-dev_v1
 
-## Setyp Artillery
+## Install Artillery Operator via Argo CD
 
-clone https://github.com/artilleryio/artillery-operator.git
+Name: artillery-operator \
+URL: https://github.com/blevinson/temp \
+Path: artillery/config/default \
+Revision: mod-dev_v1
 
-## Update Role (this needs to be verified)
-Add the following to the config/rbac/role.yaml file:
-- apiGroups:
- - ""
-   resources:
- - configmaps
-   verbs:
- - get
- - list
- - watch
- - create
- - update
- - patch
- - delete
-
-Ensure you can execute operator-deploy.sh found in the artillery-operator root directory.
-Then simply run:
-
-./operator-deploy.sh
-
-Load basic tests:
-
-kubectl apply -k hack/examples/basic-loadtest
+### Load basic tests:
+```bash
+kubectl apply -k artillery/examples/basic-loadtest
+```
 
 ## Check load test
+```bash
 kubectl get loadtests basic-test
+```
+You should observe:
+```bash
+NAME         COMPLETIONS   DURATION   AGE     ENVIRONMENT
+basic-test   2/2           6m38s      7m33s   dev
+```
+
+## Setup Prometheus (If ot setup already):
+```bash
+kubectl apply --server-side -f hack/prom-pushgateway/kube-prometheus-main/manifests/setup
+kubectl apply --server-side -f hack/prom-pushgateway/kube-prometheus-main/manifests/
+```
+
+# Add the prometheus pushgateway repo to helm
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+# source: https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway
+# install the pushgateway
+helm install prometheus-pushgateway --atomic --set serviceMonitor.enabled=true prometheus-community/prometheus-pushgateway
+
+# port-forward the prometheus-pushgateway service to localhost
+kubectl port-forward svc/prometheus-pushgateway 9091
+
+## Open another terminal:
+### Ensure the Artillery Operator is running on your cluster
+```bash
+kubectl -n artillery-operator-system get deployment.apps/artillery-operator-controller-manager
+```
+### You should see this:
+```bash
+# NAME                                    READY   UP-TO-DATE   AVAILABLE   AGE
+# artillery-operator-controller-manager   1/1     1            1           27s
+```
+### Run the load test:
+
+```bash
+kubectl apply -k artillery/examples/published-metrics-loadtest
+```
+### You should observe this:
+```bash
+# configmap/test-script created
+# loadtest.loadtest.artillery.io/test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3 created
+```
+### Ensure the test is running
+
+```bash
+kubectl get loadtests test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3
+```
+### You should observe this:
+```bash
+# NAME                                        COMPLETIONS   DURATION   AGE   ENVIRONMENT
+# test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3   0/4           60s        62s   staging
+```
+
+### Find the load test's workers
+```bash
+kubectl describe loadtests test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3
+```
+### You should observe the following:
+```bash
+# Events:
+#  Type    Reason     Age                    From                 Message
+#  ----    ------     ----                   ----                 -------
+#  Normal  Created    2m30s                  loadtest-controller  Created Load Test worker master job: test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3
+#  Normal  Running    2m29s (x2 over 2m29s)  loadtest-controller  Running Load Test worker pod: test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3-2qmzv
+#  Normal  Running    2m29s (x2 over 2m29s)  loadtest-controller  Running Load Test worker pod: test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3-cn99l
+#  Normal  Running    2m29s (x2 over 2m29s)  loadtest-controller  Running Load Test worker pod: test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3-bsvgp
+#  Normal  Running    2m29s (x2 over 2m29s)  loadtest-controller  Running Load Test worker pod: test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3-gk92x
+```
+
+### Viewing test report metrics on the Pushgateway
+#### Navigating to the Pushgateway, in our case at http://localhost:9091, you'll see:
+
+```bash
+job="test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3 "
+```
+Clicking on a job matching a Pod name displays the test report metrics for a specific worker:
+
+artillery_k8s_counter, includes counter based metrics like engine_http_responses, etc...
+artillery_k8s_rates, includes rates based metrics like engine_http_request_rate, etc...
+artillery_k8s_summaries, includes summary based metrics like engine_http_response_time_min, etc...
+
+### Viewing aggregated test report metrics on Prometheus
+
+In our case, we're running Prometheus in our K8s cluster, to access the dashboard we'll port-forward it to port 9090.
+
+```bash
+kubectl -n monitoring port-forward service/prometheus-k8s 9090
+# Forwarding from 127.0.0.1:9090 -> 9090
+# Forwarding from [::1]:9090 -> 9090
+```
+Navigating to the dashboard on http://localhost:9090/ we can view aggregated test report metrics for our Load Test across all workers.
+
+Now enter into the search input field:
+
+```bash
+artillery_k8s_counters{load_test_id="test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3", metric="engine_http_requests"}
+```
+
+This displays engine_http_requests metric for Load Test test-378dbbbd-03eb-4d0e-8a66-39033a76d0f3.
+
+
+## Notes 
+### The following was the only modification from otb Argo Workflows:
+#### Added the following to the config/rbac/role.yaml file:
+
+```yaml
+- apiGroups:
+- ""
+  resources:
+- configmaps
+  verbs:
+- get
+- list
+- watch
+- create
+- update
+- patch
+- delete
+```
