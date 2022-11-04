@@ -2,7 +2,7 @@ apiVersion: loadtest.artillery.io/v1alpha1
 kind: LoadTest
 metadata:
   name: basic-test
-  namespace: default
+#  namespace: default
   labels:
     "artillery.io/test-name": basic-test
     "artillery.io/component": loadtest

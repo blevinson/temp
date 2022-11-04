@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bootstrap-infra-argo
+spec:
+  destination:
+    name: ''
+    namespace: argo
+    server: 'https://kubernetes.default.svc'
+  source:
+    path: manifests/namespace-install
+    repoURL: 'https://github.com/argoproj/argo-workflows'
+    targetRevision: v2.12.7
+  project: default
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true

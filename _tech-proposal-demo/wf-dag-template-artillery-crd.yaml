@@ -1,0 +1,93 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: wf-atlas-dag-template-artillery-crd
+spec:
+  entrypoint: dag-template
+  templates:
+  - name: dag-template
+    dag:
+      tasks:
+      - name: DIS-Ingestion-Delay-Source
+        template: artillery-test-crd
+      - name: DIS-Processing-Delay
+        template: artillery-test-crd
+        dependencies: [DIS-Ingestion-Delay-Source]
+      - name: CTS-Ingestion-Delay
+        template: artillery-test-crd
+        dependencies: []
+      - name: CTS-Processing-Delay
+        template: artillery-test-crd
+        dependencies: [CTS-Ingestion-Delay]
+      - name: CubeJS-Response-Rate-Cohort-1
+        template: artillery-test-crd
+        dependencies: []
+      - name: CubeJS-Response-Rate-Cohort-2
+        template: artillery-test-crd
+        dependencies: [CubeJS-Response-Rate-Cohort-1]
+      - name: CubeJS-Response-Rate-Cohort-3
+        template: artillery-test-crd
+        dependencies: [CubeJS-Response-Rate-Cohort-2]
+      - name: CubeJS-Response-Rate-Cohort-4
+        template: artillery-test-crd
+        dependencies: [CubeJS-Response-Rate-Cohort-3]
+      - name: CubeJS-Response-Rate-Cohort-5
+        template: artillery-test-crd
+        dependencies: [CubeJS-Response-Rate-Cohort-4]
+      - name: CubeJS-Response-Rate-Cohort-6
+        template: artillery-test-crd
+        dependencies: [CubeJS-Response-Rate-Cohort-5]
+#      - name: CubeJS-Response-Rate-Cohort-7
+#        template: artilleryio
+#        dependencies: [CubeJS-Response-Rate-Cohort-6]
+#      - name: CubeJS-Response-Rate-Cohort-8
+#        template: artilleryio
+#        dependencies: [CubeJS-Response-Rate-Cohort-7]
+#      - name: CubeJS-Response-Rate-Cohort-9
+#        template: artilleryio
+#        dependencies: [CubeJS-Response-Rate-Cohort-8]
+#      - name: CubeJS-Response-Rate-Cohort-10
+#        template: artilleryio
+#        dependencies: [CubeJS-Response-Rate-Cohort-9]
+#      - name: CubeJS-Response-Rate-Cohort-11
+#        template: artilleryio
+#        dependencies: [CubeJS-Response-Rate-Cohort-10]
+#      - name: CubeJS-Response-Rate-Cohort-12
+#        template: artilleryio
+#        dependencies: [CubeJS-Response-Rate-Cohort-11]
+
+      # Product Driven Scenarios
+      - name: Pricing-List-of-matched-products-for-a-customer
+        template: artillery-test-crd
+        dependencies: []
+      - name: DSI-Share-of-search
+        template: artillery-test-crd
+        dependencies: [Pricing-List-of-matched-products-for-a-customer]
+      - name: Pricing-Average-price-of-competitor-products
+        template: artillery-test-crd
+        dependencies: [DSI-Share-of-search]
+      - name: Pricing-List-of-6-months-of-product-offers-data
+        template: artillery-test-crd
+        dependencies: [Pricing-Average-price-of-competitor-products]
+      - name: Pricing-List-of-Product-offers-for-a-particular-matched-product
+        template: artillery-test-crd
+        dependencies: [Pricing-List-of-6-months-of-product-offers-data]
+  - name: artillery-test-crd
+    resource:
+      action: create
+      manifest: |
+        apiVersion: loadtest.artillery.io/v1alpha1
+        kind: LoadTest
+        metadata:
+          generateName: basic-test-
+          namespace: argo
+          labels:
+            "artillery.io/test-name": basic-test
+            "artillery.io/component": loadtest
+            "artillery.io/part-of": loadtest
+        spec:
+          count: 1
+          environment: dev
+          testScript:
+            config:
+              configMap: test-script
